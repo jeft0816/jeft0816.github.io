@@ -3,6 +3,6 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/jeft0816.github.io/',
   plugins: [vue()],
-  base: '/', // jeft0816.github.io ana dizin olduğu için '/' olmalı
 })

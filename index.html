@@ -2,9 +2,9 @@
 <html lang="tr">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Burak | Portfolio</title>
-    <link rel="stylesheet" href="style.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -15,88 +15,7 @@
     />
   </head>
   <body>
-    <!-- Initial Screen -->
-    <div id="entry-screen">
-      <div class="hello-wrapper">
-        <span class="hello-text">hello</span>
-      </div>
-    </div>
-
-    <!-- Main Content -->
-    <div id="main-content" class="hidden">
-      <!-- Video Background -->
-      <video id="bg-video" loop muted playsinline>
-        <source src="assets/background.mp4" type="video/mp4" />
-      </video>
-      <div class="overlay"></div>
-
-      <div class="content-container">
-        <div class="profile-card" id="profile-card">
-          <div class="profile-header">
-            <img
-              src="assets/pp.png"
-              alt="Profile"
-              class="avatar"
-              onclick="toggleMinimize()"
-            />
-            <h1 class="username">JEFT</h1>
-            <p class="description">Discord Portfolio & Socials</p>
-          </div>
-
-          <div class="social-links">
-            <button class="social-btn discord" onclick="copyDiscord()">
-              <i class="fab fa-discord"></i>
-              <span>Discord</span>
-              <div class="tooltip" id="discord-tooltip">Kopyalandı!</div>
-            </button>
-
-            <a
-              href="https://www.instagram.com/burak._.tmr8/"
-              target="_blank"
-              class="social-btn instagram"
-            >
-              <i class="fab fa-instagram"></i>
-              <span>Instagram</span>
-            </a>
-
-            <a
-              href="https://open.spotify.com/user/btsxr9443erco2g850ytb4jv4?si=ad579d1d308b4387"
-              target="_blank"
-              class="social-btn spotify"
-            >
-              <i class="fab fa-spotify"></i>
-              <span>Spotify</span>
-            </a>
-          </div>
-
-          <!-- Music Controls -->
-          <div class="music-player">
-            <audio id="bg-music" loop>
-              <source src="assets/music.mp3" type="audio/mpeg" />
-            </audio>
-            <div class="controls">
-              <button
-                id="toggle-mute"
-                class="control-btn"
-                onclick="toggleMusic()"
-              >
-                <i id="mute-icon" class="fas fa-volume-up"></i>
-              </button>
-              <input
-                type="range"
-                id="volume-slider"
-                min="0"
-                max="1"
-                step="0.01"
-                value="0.5"
-                oninput="changeVolume(this.value)"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <script src="script.js"></script>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

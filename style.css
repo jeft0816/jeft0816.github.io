@@ -136,7 +136,7 @@ body {
   box-shadow: none;
   backdrop-filter: blur(0);
   padding: 0;
-  transform: translateY(-38vh) scale(0.9); /* Daha akıcı bir oran */
+  transform: translateY(-46vh) scale(0.7); /* İyice yukarı ve biraz daha küçük */
 }
 
 .profile-card.minimized .avatar {

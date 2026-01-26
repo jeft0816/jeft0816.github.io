@@ -118,20 +118,24 @@ body {
   max-width: 400px;
   text-align: center;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  animation: cardAppear 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: cardAppear 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              opacity 0.5s ease;
+  will-change: transform, opacity;
 }
 
-/* Minimized State */
+/* Minimized State (Kusursuz Küçülme) */
 .profile-card.minimized {
-  opacity: 0;
-  visibility: hidden;
+  opacity: 0 !important;
+  visibility: hidden !important;
   pointer-events: none;
+  transform: scale(0.7) translateY(20px) !important;
 }
 
 @keyframes cardAppear {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(30px) scale(0.9);
   }
   to {
     opacity: 1;

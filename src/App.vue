@@ -209,12 +209,11 @@ onMounted(() => {
             :class="{ minimized: !isCardVisible }"
             @click.stop
           >
-            <!-- Visitor Counter (Top Right) -->
-            <div class="visitor-stats">
-              <div class="visitor-badge-wrapper">
-                <i class="far fa-eye"></i>
-                <span class="visitor-number">{{ visitorCount }}</span>
-              </div>
+            <!-- Music Toggle (Top Right) -->
+            <div class="top-controls">
+              <button class="music-toggle-btn" @click="toggleMusic">
+                <i :class="isMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up'"></i>
+              </button>
             </div>
 
             <div class="profile-header">
@@ -252,25 +251,25 @@ onMounted(() => {
               </a>
             </div>
 
-            <!-- Music Controls -->
-            <div class="music-player">
-              <audio ref="bgMusic" loop>
-                <source src="/assets/music.mp3" type="audio/mpeg" />
-              </audio>
-              <div class="controls">
-                <button class="control-btn" @click="toggleMusic">
-                  <i :class="isMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up'"></i>
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  v-model="volume"
-                  @input="changeVolume(volume)"
-                />
+            <!-- Stats and Location (Bottom Left) -->
+            <div class="bottom-info">
+              <div class="info-badge visitor">
+                <i class="far fa-eye"></i>
+                <span>{{ visitorCount }}</span>
+                <div class="info-tooltip">Profile Views</div>
+              </div>
+              <div class="separator"></div>
+              <div class="info-badge location">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>BURSA</span>
+                <div class="info-tooltip">Location</div>
               </div>
             </div>
+
+            <!-- Hidden Audio -->
+            <audio ref="bgMusic" loop>
+              <source src="/assets/music.mp3" type="audio/mpeg" />
+            </audio>
           </div>
         </div>
       </div>

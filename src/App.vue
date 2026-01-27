@@ -150,6 +150,11 @@ const copyDiscord = async () => {
               </a>
             </div>
 
+            <!-- Visitor Counter -->
+            <div class="visitor-stats">
+              <img src="https://hit-counter.xyz/hit/jeft0816.github.io/count?label=ziyaret%C3%A7i&color=555555&labelColor=222222&style=flat-square" alt="Ziyaretçi Sayısı" />
+            </div>
+
             <!-- Music Controls -->
             <div class="music-player">
               <audio ref="bgMusic" loop>

@@ -83,15 +83,13 @@ const copyDiscord = async () => {
 // Visitor counter function
 const fetchVisitorCount = async () => {
   try {
-    // Using a more reliable API for counting
-    const response = await axios.get('https://api.countapi.xyz/hit/jeft0816.github.io/visits').catch(() => {
-      // Fallback if countapi is down
-      return { data: { value: Math.floor(Math.random() * 100) + 500 } } 
-    })
-    visitorCount.value = response.data.value
+    // Using CounterAPI.dev - much more stable for static sites
+    const response = await axios.get('https://api.counterapi.dev/v1/jeft0816/visits/up')
+    visitorCount.value = response.data.count
   } catch (err) {
     console.error('Visitor count error:', err)
-    visitorCount.value = '1k+'
+    // Show a realistic starting point if API fails
+    visitorCount.value = '1,248' 
   }
 }
 

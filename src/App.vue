@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 
 // State
 const showEntryScreen = ref(true)
@@ -13,12 +13,18 @@ const bgVideo = ref(null)
 const bgMusic = ref(null)
 
 // Entry function
-const enterSite = () => {
+const enterSite = async () => {
   showEntryScreen.value = false
+  
+  // Wait for DOM update because main-content (and video) is behind v-if
+  await nextTick()
   
   // Play media
   if (bgVideo.value) {
-    bgVideo.value.play().catch(e => console.log('Video autoplay blocked'))
+    bgVideo.value.play().catch(e => {
+      console.log('Video play failed:', e)
+      // Retry playing on next interaction if needed
+    })
   }
   if (bgMusic.value) {
     bgMusic.value.play().catch(e => console.log('Audio autoplay blocked'))

@@ -152,7 +152,10 @@ const copyDiscord = async () => {
 
             <!-- Visitor Counter -->
             <div class="visitor-stats">
-              <img src="https://hit-counter.xyz/hit/jeft0816.github.io/count?label=ziyaret%C3%A7i&color=555555&labelColor=222222&style=flat-square" alt="Ziyaretçi Sayısı" />
+              <div class="visitor-badge-wrapper">
+                <span class="visitor-label">GÖSTERİM</span>
+                <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fjeft0816.github.io&count_bg=%23ffffff&title_bg=%23333333&icon=&icon_color=%23E7E7E7&title=SAYI&edge_flat=true" alt="Yükleniyor..." />
+              </div>
             </div>
 
             <!-- Music Controls -->

@@ -9,6 +9,11 @@ const isMuted = ref(false)
 const volume = ref(0.5)
 const showTooltip = ref(false)
 const visitorCount = ref('...')
+const displayText = ref('')
+const fullText = 'JEFT'
+let isDeleting = false
+let charIndex = 0
+let typeSpeed = 200
 
 // Refs
 const bgVideo = ref(null)
@@ -105,8 +110,66 @@ const fetchVisitorCount = async () => {
   }
 }
 
+const cardRef = ref(null)
+
+const handleMouseMove = (e) => {
+  if (!cardRef.value || !isCardVisible.value) return
+  
+  const card = cardRef.value
+  const rect = card.getBoundingClientRect()
+  
+  // Ekran merkezine veya kart merkezine göre hesaplama yapalım
+  const centerX = window.innerWidth / 2
+  const centerY = window.innerHeight / 2
+  
+  const mouseX = e.clientX
+  const mouseY = e.clientY
+  
+  // Merkeze olan uzaklık oranı (-1 ile 1 arası)
+  const deltaX = (mouseX - centerX) / centerX
+  const deltaY = (mouseY - centerY) / centerY
+  
+  // Maksimum 10 derece eğim (ekranın her yerinde çalıştığı için biraz arttırdım)
+  const rotateX = -deltaY * 10
+  const rotateY = deltaX * 10
+  
+  card.style.setProperty('--rx', `${rotateX}deg`)
+  card.style.setProperty('--ry', `${rotateY}deg`)
+}
+
+const resetTransform = () => {
+  if (!cardRef.value) return
+  cardRef.value.style.setProperty('--rx', '0deg')
+  cardRef.value.style.setProperty('--ry', '0deg')
+}
+
+const typeEffect = () => {
+  const currentSpeed = isDeleting ? 100 : 200
+  
+  if (!isDeleting && charIndex < fullText.length) {
+    displayText.value += fullText[charIndex]
+    charIndex++
+  } else if (isDeleting && charIndex > 0) {
+    displayText.value = displayText.value.substring(0, charIndex - 1)
+    charIndex--
+  }
+
+  if (charIndex === fullText.length) {
+    isDeleting = true
+    setTimeout(typeEffect, 2000) // Tam yazıldıktan sonra bekleme
+    return
+  } else if (isDeleting && charIndex === 0) {
+    isDeleting = false
+    setTimeout(typeEffect, 500) // Tam silindikten sonra bekleme
+    return
+  }
+
+  setTimeout(typeEffect, currentSpeed)
+}
+
 onMounted(() => {
   fetchVisitorCount()
+  typeEffect()
 })
 </script>
 
@@ -131,6 +194,7 @@ onMounted(() => {
         v-if="!showEntryScreen" 
         id="main-content" 
         @click="handleBackgroundClick"
+        @mousemove="handleMouseMove"
       >
         <!-- Video Background -->
         <video ref="bgVideo" id="bg-video" loop muted playsinline>
@@ -140,6 +204,7 @@ onMounted(() => {
 
         <div class="content-container">
           <div 
+            ref="cardRef"
             class="profile-card" 
             :class="{ minimized: !isCardVisible }"
             @click.stop
@@ -159,14 +224,14 @@ onMounted(() => {
                 class="avatar"
                 @click="toggleCard"
               />
-              <h1 class="username">JEFT</h1>
-              <p class="description">Discord Portfolio &amp; Socials</p>
+              <h1 class="username">
+                {{ displayText }}<span class="cursor">|</span>
+              </h1>
             </div>
 
             <div class="social-links">
               <button class="social-btn discord" @click="copyDiscord">
                 <i class="fab fa-discord"></i>
-                <span>Discord</span>
                 <div class="tooltip" :class="{ show: showTooltip }">Kopyalandı!</div>
               </button>
 
@@ -176,7 +241,6 @@ onMounted(() => {
                 class="social-btn instagram"
               >
                 <i class="fab fa-instagram"></i>
-                <span>Instagram</span>
               </a>
 
               <a
@@ -185,7 +249,6 @@ onMounted(() => {
                 class="social-btn spotify"
               >
                 <i class="fab fa-spotify"></i>
-                <span>Spotify</span>
               </a>
             </div>
 

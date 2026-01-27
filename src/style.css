@@ -120,10 +120,18 @@ body {
   text-align: center;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   animation: cardAppear 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+  will-change: transform;
+
+  /* Tilt variables */
+  --rx: 0deg;
+  --ry: 0deg;
+  transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));
+
+  /* Mouse takibi için hızlı, küçülme/belirme için yavaş geçiş */
   transition:
-    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.1s ease-out,
     opacity 0.5s ease;
-  will-change: transform, opacity;
 }
 
 /* Minimized State (Kusursuz Küçülme) */
@@ -131,7 +139,11 @@ body {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none;
-  transform: scale(0.7) translateY(20px) !important;
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(0.7)
+    translateY(20px) !important;
+  transition:
+    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.5s ease !important;
 }
 
 @keyframes cardAppear {
@@ -145,6 +157,10 @@ body {
   }
 }
 
+.profile-header {
+  transform-style: preserve-3d;
+}
+
 .avatar {
   width: 100px;
   height: 100px;
@@ -155,6 +171,8 @@ body {
   object-fit: cover;
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  /* 3D derinlik hissi için */
+  transform: translateZ(30px);
 }
 
 .username {
@@ -163,6 +181,21 @@ body {
   margin-bottom: 8px;
   letter-spacing: -0.5px;
   transition: all 0.6s ease;
+  transform: translateZ(20px);
+  min-height: 2.4rem; /* Metin yokken kaymayı önlemek için */
+}
+
+.cursor {
+  display: inline-block;
+  margin-left: 2px;
+  animation: blink 1s infinite;
+  color: var(--primary-color);
+  font-weight: 200;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 .description {
@@ -170,56 +203,52 @@ body {
   color: rgba(255, 255, 255, 0.6);
   margin-bottom: 30px;
   transition: all 0.6s ease;
+  transform: translateZ(12px);
 }
 
 /* Social Buttons */
 .social-links {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-direction: row;
+  justify-content: center;
+  gap: 15px;
   margin-bottom: 30px;
   transition: all 0.6s ease;
+  transform-style: preserve-3d;
+  transform: translateZ(8px);
 }
 
 .social-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 12px;
+  width: 55px;
+  height: 55px;
   text-decoration: none;
   color: white;
-  font-size: 1rem;
-  font-weight: 400;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--card-border);
+  font-size: 2rem;
+  background: none;
+  border: none;
   transition: var(--transition);
   cursor: pointer;
   position: relative;
-  width: 100%;
 }
 
 .social-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px) scale(1.1);
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
 }
 
 .social-btn i {
-  font-size: 1.2rem;
+  font-size: 2rem;
+  transition: var(--transition);
 }
 
-/* Specific button styles */
-.discord i {
-  color: #5865f2;
-}
-.instagram i {
-  color: #e4405f;
-}
+/* Specific button styles (Removed colors for monochrome look) */
+.discord i,
+.instagram i,
 .spotify i {
-  color: #1db954;
+  color: var(--primary-color);
 }
 
 /* Tooltip */
@@ -250,6 +279,7 @@ body {
   top: 15px;
   right: 15px;
   z-index: 10;
+  transform: translateZ(25px);
 }
 
 .visitor-badge-wrapper {
@@ -277,7 +307,7 @@ body {
 .visitor-number {
   font-size: 0.85rem;
   font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   color: #fff;
 }
 

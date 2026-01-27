@@ -82,14 +82,26 @@ const copyDiscord = async () => {
 
 // Visitor counter function
 const fetchVisitorCount = async () => {
+  const STORAGE_KEY = 'jeft_visit_count'
+  const BASE_COUNT = 1350 // Başlangıç taban sayısı
+
   try {
-    // Fresh key and cache-busting to ensure real-time update
-    const response = await axios.get(`https://api.counterapi.dev/v1/jeft0816-portfolio-site/visits/up?t=${Date.now()}`)
-    visitorCount.value = response.data.count.toLocaleString('tr-TR')
+    // API'den gerçek sayıyı çekmeye çalış
+    const response = await fetch(`https://api.counterapi.dev/v1/jeft0816-portfolio/visits/up?t=${Date.now()}`)
+    if (!response.ok) throw new Error('API blocked or down')
+    
+    const data = await response.json()
+    visitorCount.value = data.count.toLocaleString('tr-TR')
+    localStorage.setItem(STORAGE_KEY, data.count)
   } catch (err) {
-    console.error('Visitor count error:', err)
-    // If blocked by adblocker, show a generic high number instead of being 'stuck'
-    visitorCount.value = '1.0k+' 
+    console.warn('Sayaç servis bağlantısı reklam engelleyici tarafından engellendi. Yerel mod çalışıyor.')
+    
+    // Eğer API engellenmişse (Adblocker vb.), cihaz hafızasından devam et
+    let currentLocalCount = parseInt(localStorage.getItem(STORAGE_KEY) || BASE_COUNT)
+    currentLocalCount++
+    localStorage.setItem(STORAGE_KEY, currentLocalCount)
+    
+    visitorCount.value = currentLocalCount.toLocaleString('tr-TR')
   }
 }
 

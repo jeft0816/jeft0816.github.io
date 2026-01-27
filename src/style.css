@@ -244,46 +244,41 @@ body {
   top: -45px;
 }
 
-/* Visitor Stats */
+/* Visitor Stats (Top Right Badge) */
 .visitor-stats {
-  margin: 20px 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 10;
 }
 
 .visitor-badge-wrapper {
-  background: rgba(255, 255, 255, 0.03);
-  padding: 10px 24px;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  padding: 6px 12px;
+  border-radius: 10px;
   border: 1px solid var(--card-border);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   transition: var(--transition);
-  min-width: 120px;
 }
 
 .visitor-badge-wrapper:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
-.visitor-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
+.visitor-badge-wrapper i {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .visitor-number {
-  font-size: 1.2rem;
+  font-size: 0.85rem;
   font-weight: 600;
   font-family: 'JetBrains Mono', monospace;
   color: #fff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 /* Music Player Controls */

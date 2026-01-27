@@ -144,6 +144,14 @@ onMounted(() => {
             :class="{ minimized: !isCardVisible }"
             @click.stop
           >
+            <!-- Visitor Counter (Top Right) -->
+            <div class="visitor-stats">
+              <div class="visitor-badge-wrapper">
+                <i class="far fa-eye"></i>
+                <span class="visitor-number">{{ visitorCount }}</span>
+              </div>
+            </div>
+
             <div class="profile-header">
               <img
                 src="/assets/pp.png"
@@ -179,14 +187,6 @@ onMounted(() => {
                 <i class="fab fa-spotify"></i>
                 <span>Spotify</span>
               </a>
-            </div>
-
-            <!-- Visitor Counter -->
-            <div class="visitor-stats">
-              <div class="visitor-badge-wrapper">
-                <span class="visitor-label">GÖSTERİM</span>
-                <span class="visitor-number">{{ visitorCount }}</span>
-              </div>
             </div>
 
             <!-- Music Controls -->

@@ -109,6 +109,7 @@ body {
 }
 
 .profile-card {
+  position: relative;
   background: var(--card-bg);
   backdrop-filter: blur(15px);
   border: 1px solid var(--card-border);

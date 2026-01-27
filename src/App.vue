@@ -73,7 +73,7 @@ const changeVolume = (val) => {
 
 // Discord copy function
 const copyDiscord = async () => {
-  const username = '.buraaks'
+  const username = 'jeft._.'
   try {
     await navigator.clipboard.writeText(username)
     showTooltip.value = true

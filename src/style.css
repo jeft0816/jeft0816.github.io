@@ -79,8 +79,8 @@ img { -webkit-user-drag: none; }
 
 .main-avatar-wrapper {
   position: relative;
-  width: 65px;
-  height: 65px;
+  width: 90px;
+  height: 90px;
   flex-shrink: 0;
 }
 

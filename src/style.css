@@ -246,7 +246,7 @@ img { -webkit-user-drag: none; }
   position: relative;
 }
 
-.social-button:hover { transform: translateY(-3px); color: var(--secondary); }
+.social-button:hover { transform: scale(1.2); }
 
 .tooltip-box {
   position: absolute; top: -35px; left: 50%; transform: translateX(-50%);

@@ -127,7 +127,6 @@ img { -webkit-user-drag: none; }
   border: 1px solid var(--border);
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   transition: transform 0.3s ease;
-  cursor: pointer;
 }
 
 .mini-album-art:hover {

@@ -4,7 +4,6 @@ import axios from 'axios'
 
 // State
 const showEntryScreen = ref(true)
-const isCardVisible = ref(true)
 const isMuted = ref(false)
 const volume = ref(0.5)
 const showTooltip = ref(false)
@@ -39,18 +38,7 @@ const enterSite = async () => {
   }
 }
 
-// Toggle card visibility
-const toggleCard = (event) => {
-  if (event) event.stopPropagation()
-  isCardVisible.value = !isCardVisible.value
-}
 
-// Show card when clicking on background
-const handleBackgroundClick = () => {
-  if (!isCardVisible.value) {
-    isCardVisible.value = true
-  }
-}
 
 // Music controls
 const toggleMusic = () => {
@@ -113,7 +101,7 @@ const fetchVisitorCount = async () => {
 const cardRef = ref(null)
 
 const handleMouseMove = (e) => {
-  if (!cardRef.value || !isCardVisible.value) return
+  if (!cardRef.value) return
   
   const card = cardRef.value
   const rect = card.getBoundingClientRect()
@@ -167,9 +155,40 @@ const typeEffect = () => {
   setTimeout(typeEffect, currentSpeed)
 }
 
+const lanyardData = ref(null)
+const DISCORD_ID = '828344938944921630'
+
+const connectLanyard = () => {
+  const socket = new WebSocket('wss://api.lanyard.rest/socket')
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data)
+
+    if (data.op === 1) {
+      socket.send(JSON.stringify({
+        op: 2,
+        d: { subscribe_to_id: DISCORD_ID }
+      }))
+
+      setInterval(() => {
+        socket.send(JSON.stringify({ op: 3 }))
+      }, data.d.heartbeat_interval)
+    }
+
+    if (data.t === 'INIT_STATE' || data.t === 'PRESENCE_UPDATE') {
+      lanyardData.value = data.d
+    }
+  }
+
+  socket.onclose = () => {
+    setTimeout(connectLanyard, 5000)
+  }
+}
+
 onMounted(() => {
   fetchVisitorCount()
   typeEffect()
+  connectLanyard()
 })
 </script>
 
@@ -193,7 +212,6 @@ onMounted(() => {
       <div 
         v-if="!showEntryScreen" 
         id="main-content" 
-        @click="handleBackgroundClick"
         @mousemove="handleMouseMove"
       >
         <!-- Video Background -->
@@ -206,63 +224,73 @@ onMounted(() => {
           <div 
             ref="cardRef"
             class="profile-card" 
-            :class="{ minimized: !isCardVisible }"
             @click.stop
           >
-            <!-- Music Toggle (Top Right) -->
-            <div class="top-controls">
-              <button class="music-toggle-btn" @click="toggleMusic">
-                <i :class="isMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up'"></i>
-              </button>
-            </div>
 
-            <div class="profile-header">
-              <img
-                src="/assets/pp.png"
-                alt="Profile"
-                class="avatar"
-                @click="toggleCard"
-              />
-              <h1 class="username">
-                {{ displayText }}<span class="cursor">|</span>
-              </h1>
-            </div>
 
-            <div class="social-links">
-              <button class="social-btn discord" @click="copyDiscord">
-                <i class="fab fa-discord"></i>
-                <div class="tooltip" :class="{ show: showTooltip }">Kopyalandı!</div>
-              </button>
-
-              <a
-                href="https://www.instagram.com/burak._.tmr8/"
-                target="_blank"
-                class="social-btn instagram"
-              >
-                <i class="fab fa-instagram"></i>
-              </a>
-
-              <a
-                href="https://open.spotify.com/user/btsxr9443erco2g850ytb4jv4?si=ad579d1d308b4387"
-                target="_blank"
-                class="social-btn spotify"
-              >
-                <i class="fab fa-spotify"></i>
-              </a>
-            </div>
-
-            <!-- Stats and Location (Bottom Left) -->
-            <div class="bottom-info">
-              <div class="info-badge visitor">
-                <i class="far fa-eye"></i>
-                <span>{{ visitorCount }}</span>
-                <div class="info-tooltip">Profile Views</div>
+            <div class="card-stack-layout">
+              <!-- TOP: Avatar + Nickname & Integrated Music -->
+              <div class="identity-header">
+                <div class="main-avatar-wrapper">
+                  <img
+                    src="/assets/pp.png"
+                    alt="Profile"
+                    class="main-avatar"
+                  />
+                  <div v-if="lanyardData" class="main-status-dot" :class="lanyardData.discord_status"></div>
+                </div>
+                
+                <div class="username-group">
+                  <h1 class="username">
+                    {{ displayText }}<span class="cursor">|</span>
+                  </h1>
+                  <!-- Integrated Spotify Mini-Art -->
+                  <div v-if="lanyardData && lanyardData.listening_to_spotify" class="mini-music-status">
+                    <img :src="lanyardData.spotify.album_art_url" class="mini-album-art" alt="Spotify" />
+                    <div class="music-tooltip">
+                      {{ lanyardData.spotify.song }} - {{ lanyardData.spotify.artist }}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="separator"></div>
-              <div class="info-badge location">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>BURSA</span>
-                <div class="info-tooltip">Location</div>
+
+              <!-- MIDDLE: Only Game Activity (if exists) -->
+              <div v-if="lanyardData && lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify')" class="single-activity-row">
+                <div class="activity-chip game-chip">
+                  <div class="chip-icon"><i class="fas fa-gamepad"></i></div>
+                  <div class="chip-info">
+                    <span class="chip-name">{{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify').name }}</span>
+                    <span class="chip-sub">{{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify').details || 'Active Now' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BOTTOM: Socials + Info -->
+              <div class="card-footer-section">
+                <div class="social-links-row">
+                  <button class="social-button" @click="copyDiscord">
+                    <i class="fab fa-discord"></i>
+                    <div class="tooltip-box" :class="{ visible: showTooltip }">Kopyalandı!</div>
+                  </button>
+                  <a href="https://www.instagram.com/burak._.tmr8/" target="_blank" class="social-button">
+                    <i class="fab fa-instagram"></i>
+                  </a>
+                  <a href="https://open.spotify.com/user/btsxr9443erco2g850ytb4jv4?si=ad579d1d308b4387" target="_blank" class="social-button">
+                    <i class="fab fa-spotify"></i>
+                  </a>
+                </div>
+
+                <div class="stats-badges">
+                  <div class="badge-item">
+                    <i class="far fa-eye"></i>
+                    <span>{{ visitorCount }}</span>
+                  </div>
+                  <div class="vertical-line"></div>
+                  <div class="badge-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>BURSA</span>
+                  </div>
+                </div>
               </div>
             </div>
 

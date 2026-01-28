@@ -1,387 +1,269 @@
 :root {
-  --primary-color: #ffffff;
-  --background-dark: #000000;
-  --card-bg: rgba(255, 255, 255, 0.05);
-  --card-border: rgba(255, 255, 255, 0.1);
-  --accent-glow: rgba(255, 255, 255, 0.2);
-  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --primary: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.6);
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --border: rgba(255, 255, 255, 0.08);
+  --discord: #5865f2;
+  --spotify: #1ed760;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: "Outfit", sans-serif;
-  background-color: var(--background-dark);
-  color: var(--primary-color);
+  background: #000;
+  color: #fff;
   overflow: hidden;
   height: 100vh;
-  width: 100vw;
+  user-select: none;
 }
+
+img { -webkit-user-drag: none; }
 
 /* Entry Screen */
 #entry-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  cursor: pointer;
-  transition:
-    opacity 1s ease-out,
-    visibility 1s;
+  position: fixed; inset: 0; background: #000;
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000; cursor: pointer;
 }
 
 .hello-text {
-  font-size: 1.2rem;
-  font-weight: 300;
-  letter-spacing: 5px;
-  opacity: 0.6;
+  font-size: 1.1rem; letter-spacing: 5px; opacity: 0.5;
   animation: pulse 2s infinite ease-in-out;
-  text-transform: lowercase;
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
+@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
 
-/* Main Content */
-#main-content {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  opacity: 1;
-  transition: opacity 1s ease-in;
-}
+/* Background */
+#bg-video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: -1; }
 
-#main-content.hidden {
-  opacity: 0;
-  visibility: hidden;
-}
-
-/* Background Video */
-#bg-video {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  min-width: 100%;
-  min-height: 100%;
-  object-fit: cover;
-  z-index: -2;
-}
-
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background:
-    radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%),
-    rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(2px);
-  z-index: -1;
-}
-
-/* Content Container */
-.content-container {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-}
+/* Layout */
+.content-container { height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
 
 .profile-card {
   position: relative;
-  background: var(--card-bg);
-  backdrop-filter: blur(8px);
+  background: none;
+  backdrop-filter: none;
   border: none;
-  border-radius: 24px;
-  padding: 40px;
+  padding: 35px;
   width: 100%;
-  max-width: 400px;
-  text-align: center;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  animation: cardAppear 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  transform-style: preserve-3d;
-  will-change: transform;
-
-  /* Tilt variables */
+  max-width: 500px;
+  box-shadow: none;
+  
+  /* 3D Tilt Settings */
   --rx: 0deg;
   --ry: 0deg;
   transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));
-
-  /* Mouse takibi için hızlı, küçülme/belirme için yavaş geçiş */
-  transition:
-    transform 0.1s ease-out,
-    opacity 0.5s ease;
-}
-
-/* Minimized State (Kusursuz Küçülme) */
-.profile-card.minimized {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none;
-  transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(0.7)
-    translateY(20px) !important;
-  transition:
-    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-    opacity 0.5s ease !important;
-}
-
-@keyframes cardAppear {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.profile-header {
   transform-style: preserve-3d;
+  transition: transform 0.1s ease-out, opacity 0.5s ease;
 }
 
-.avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  margin-bottom: 20px;
-  border: 2px solid var(--card-border);
-  padding: 5px;
-  object-fit: cover;
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  /* 3D derinlik hissi için */
-  transform: translateZ(30px);
-}
+/* 3D Depth for inner elements */
+.identity-header { transform: translateZ(50px); }
+.single-activity-row { transform: translateZ(30px); }
+.card-footer-section { transform: translateZ(40px); }
+.main-avatar-wrapper { transform: translateZ(20px); }
 
-.username {
-  font-size: 2rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  letter-spacing: -0.5px;
-  transition: all 0.6s ease;
-  transform: translateZ(20px);
-  min-height: 2.4rem; /* Metin yokken kaymayı önlemek için */
-}
+.profile-card.minimized { opacity: 0; transform: scale(0.9) translateY(20px); pointer-events: none; }
 
-.cursor {
-  display: inline-block;
-  margin-left: 2px;
-  animation: blink 1s infinite;
-  color: var(--primary-color);
-  font-weight: 200;
-}
+.card-stack-layout { display: flex; flex-direction: column; gap: 20px; }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-.description {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 30px;
-  transition: all 0.6s ease;
-  transform: translateZ(12px);
-}
-
-/* Social Buttons */
-.social-links {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 15px;
-  margin-bottom: 30px;
-  transition: all 0.6s ease;
-  transform-style: preserve-3d;
-  transform: translateZ(8px);
-}
-
-.social-btn {
+/* 1. Header Row (PP + Nick) */
+.identity-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 55px;
-  height: 55px;
-  text-decoration: none;
-  color: white;
-  font-size: 2rem;
-  background: none;
-  border: none;
-  transition: var(--transition);
-  cursor: pointer;
+  gap: 20px;
+  padding-bottom: 5px;
+}
+
+.main-avatar-wrapper {
   position: relative;
+  width: 65px;
+  height: 65px;
+  flex-shrink: 0;
 }
 
-.social-btn:hover {
-  transform: scale(1.2);
-  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.5));
+.main-avatar {
+  width: 100%; height: 100%; border-radius: 50%;
+  border: 2px solid var(--border); padding: 3px;
+  transition: 0.3s;
 }
 
-.social-btn i {
-  font-size: 2rem;
-  transition: var(--transition);
+.main-avatar:hover { transform: none; }
+
+.main-status-dot {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%; border: 3px solid #1a1a1a;
 }
 
-/* Specific button styles (Removed colors for monochrome look) */
-.discord i,
-.instagram i,
-.spotify i {
-  color: var(--primary-color);
-}
+.main-status-dot.online { background: #23a559; }
+.main-status-dot.idle { background: #f0b232; }
+.main-status-dot.dnd { background: #f23f43; }
+.main-status-dot.offline { background: #80848e; }
 
-/* Tooltip */
-.tooltip {
-  position: absolute;
-  top: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.9);
-  color: #000;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  opacity: 0;
-  pointer-events: none;
-  transition: var(--transition);
-}
+.username { font-size: 1.8rem; font-weight: 700; letter-spacing: -1px; }
+.cursor { animation: blink 1s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-.tooltip.show {
-  opacity: 1;
-  top: -45px;
-}
-
-/* Top Controls (Music Toggle) */
-.top-controls {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 10;
-  transform: translateZ(40px);
-}
-
-.music-toggle-btn {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--card-border);
-  color: white;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+.username-group {
+  flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition);
+  justify-content: space-between;
 }
 
-.music-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+.mini-music-status {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mini-album-art {
+  width: 45px;
+  height: 45px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.mini-album-art:hover {
   transform: scale(1.1);
 }
 
-/* Bottom Info (Visitor & Location) */
-.bottom-info {
+.music-tooltip {
   position: absolute;
-  bottom: 20px;
-  left: 20px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-  transform: translateZ(25px);
-}
-
-.separator {
-  width: 1px;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.info-badge {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-  transition: var(--transition);
-  width: fit-content;
-  cursor: help;
-}
-
-.info-badge i {
-  font-size: 0.85rem;
-  opacity: 0.8;
-}
-
-.info-badge.location i {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.info-badge:hover {
-  color: rgba(255, 255, 255, 1);
-  transform: translateY(-2px);
-}
-
-.info-tooltip {
-  position: absolute;
-  bottom: 100%;
+  bottom: 110%; /* Görselin üstüne taşındı */
   left: 50%;
-  transform: translateX(-50%) translateY(0px);
+  transform: translateX(-50%) translateY(0);
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
   font-size: 0.7rem;
   font-weight: 500;
-  letter-spacing: 0.5px;
+  color: #fff;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  margin-bottom: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10;
 }
 
-/* Tooltip caret (Ok işareti) */
-.info-tooltip::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 6px;
-  border-style: solid;
-  border-color: rgba(255, 255, 255, 0.1) transparent transparent transparent;
-}
-
-.info-badge:hover .info-tooltip {
+.mini-music-status:hover .music-tooltip {
   opacity: 1;
-  transform: translateX(-50%) translateY(-5px);
+  transform: translateX(-50%) translateY(-8px);
+}
+
+/* 2. Activity Layout */
+.single-activity-row {
+  width: 100%;
+}
+
+.activity-chip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: 0.3s;
+}
+
+.activity-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.chip-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.chip-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.chip-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chip-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip-sub {
+  font-size: 0.7rem;
+  color: var(--secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Specific colors for icons if needed */
+.game-chip .chip-icon i { color: #5865f2; }
+.spotify-chip .chip-icon i { color: #1ed760; }
+
+@media (max-width: 600px) {
+  .dual-activity-layout {
+    flex-direction: column;
+  }
+}
+
+/* 3. Footer row */
+.card-footer-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.social-links-row { display: flex; gap: 25px; }
+
+.social-button {
+  background: none; border: none; color: #fff;
+  font-size: 1.8rem; cursor: pointer; transition: 0.3s;
+  position: relative;
+}
+
+.social-button:hover { transform: translateY(-3px); color: var(--secondary); }
+
+.tooltip-box {
+  position: absolute; top: -35px; left: 50%; transform: translateX(-50%);
+  background: #fff; color: #000; font-size: 0.65rem; padding: 4px 8px;
+  border-radius: 5px; opacity: 0; pointer-events: none; transition: 0.3s;
+}
+.tooltip-box.visible { opacity: 1; top: -40px; }
+
+.stats-badges { display: flex; align-items: center; gap: 10px; opacity: 0.5; }
+.badge-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 500; }
+.vertical-line { width: 1px; height: 10px; background: rgba(255,255,255,0.3); }
+
+/* Controls */
+.top-controls { display: none; }
+
+@media (max-width: 480px) {
+  .profile-card { padding: 25px; }
+  .card-footer-section { flex-direction: column; gap: 20px; }
 }

@@ -210,7 +210,7 @@ onMounted(() => {
     <Transition name="fade-slow">
       <!-- Main Content -->
       <div 
-        v-if="!showEntryScreen" 
+        v-show="!showEntryScreen" 
         id="main-content" 
         @mousemove="handleMouseMove"
       >
@@ -236,6 +236,8 @@ onMounted(() => {
                     src="/assets/pp.png"
                     alt="Profile"
                     class="main-avatar"
+                    fetchpriority="high"
+                    loading="eager"
                   />
                   <div v-if="lanyardData" class="main-status-dot" :class="lanyardData.discord_status"></div>
                 </div>

@@ -13,6 +13,7 @@ const fullText = 'JEFT'
 let isDeleting = false
 let charIndex = 0
 let typeSpeed = 200
+const lastGameActivity = ref(JSON.parse(localStorage.getItem('last_game_activity')) || null)
 
 // Refs
 const bgVideo = ref(null)
@@ -177,6 +178,18 @@ const connectLanyard = () => {
 
     if (data.t === 'INIT_STATE' || data.t === 'PRESENCE_UPDATE') {
       lanyardData.value = data.d
+      
+      // Update last played game activity if current one is a game/app (not Spotify/Custom)
+      const currentGame = data.d.activities.find(a => a.type !== 4 && a.name !== 'Spotify')
+      if (currentGame) {
+        const activityToStore = {
+          name: currentGame.name,
+          details: currentGame.details || 'Playing',
+          timestamp: Date.now()
+        }
+        lastGameActivity.value = activityToStore
+        localStorage.setItem('last_game_activity', JSON.stringify(activityToStore))
+      }
     }
   }
 
@@ -185,10 +198,33 @@ const connectLanyard = () => {
   }
 }
 
+// Utility for relative time
+const timeAgo = (timestamp) => {
+  if (!timestamp) return 'Previously'
+  const seconds = Math.floor((Date.now() - timestamp) / 1000)
+  if (seconds < 60) return 'seconds ago'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
+
+const lastSeenText = ref('')
+const updateLastSeen = () => {
+  if (lastGameActivity.value && lastGameActivity.value.timestamp) {
+    lastSeenText.value = timeAgo(lastGameActivity.value.timestamp)
+  }
+}
+
 onMounted(() => {
   fetchVisitorCount()
   typeEffect()
   connectLanyard()
+  
+  // Update relative time every minute
+  updateLastSeen()
+  setInterval(updateLastSeen, 60000)
 })
 </script>
 
@@ -256,13 +292,18 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- MIDDLE: Only Game Activity (if exists) -->
-              <div v-if="lanyardData && lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify')" class="single-activity-row">
+              <!-- MIDDLE: Live or Last Game Activity -->
+              <div v-if="lanyardData && (lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify') || lastGameActivity)" class="single-activity-row">
                 <div class="activity-chip game-chip">
                   <div class="chip-icon"><i class="fas fa-gamepad"></i></div>
                   <div class="chip-info">
-                    <span class="chip-name">{{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify').name }}</span>
-                    <span class="chip-sub">{{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify').details || 'Active Now' }}</span>
+                    <!-- Show current game if exists, otherwise show last played from storage -->
+                    <span class="chip-name">
+                      {{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify')?.name || lastGameActivity.name }}
+                    </span>
+                    <span class="chip-sub">
+                      {{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify') ? (lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify').details || 'Playing Now') : lastSeenText }}
+                    </span>
                   </div>
                 </div>
               </div>

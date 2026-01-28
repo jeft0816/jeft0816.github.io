@@ -180,7 +180,7 @@ const connectLanyard = () => {
       lanyardData.value = data.d
       
       // Update last played game activity if current one is a game/app (not Spotify/Custom)
-      const currentGame = data.d.activities.find(a => a.type !== 4 && a.name !== 'Spotify')
+      const currentGame = data.d?.activities?.find(a => a.type !== 4 && a.name !== 'Spotify')
       if (currentGame) {
         const activityToStore = {
           name: currentGame.name,
@@ -293,16 +293,16 @@ onMounted(() => {
               </div>
 
               <!-- MIDDLE: Live or Last Game Activity -->
-              <div v-if="lanyardData && (lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify') || lastGameActivity)" class="single-activity-row">
+              <div v-if="(lanyardData && lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify')) || lastGameActivity" class="single-activity-row">
                 <div class="activity-chip game-chip">
                   <div class="chip-icon"><i class="fas fa-gamepad"></i></div>
                   <div class="chip-info">
                     <!-- Show current game if exists, otherwise show last played from storage -->
                     <span class="chip-name">
-                      {{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify')?.name || lastGameActivity.name }}
+                      {{ lanyardData?.activities?.find(a => a.type !== 4 && a.name !== 'Spotify')?.name || lastGameActivity?.name || 'No Activity' }}
                     </span>
                     <span class="chip-sub">
-                      {{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify') ? (lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify').details || 'Playing Now') : lastSeenText }}
+                      {{ lanyardData?.activities?.find(a => a.type !== 4 && a.name !== 'Spotify') ? (lanyardData?.activities?.find(a => a.type !== 4 && a.name !== 'Spotify')?.details || 'Playing Now') : (lastSeenText ? `Last played: ${lastSeenText}` : 'Offline') }}
                     </span>
                   </div>
                 </div>

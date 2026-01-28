@@ -9,7 +9,8 @@ const volume = ref(0.5)
 const showTooltip = ref(false)
 const visitorCount = ref('...')
 const displayText = ref('')
-const fullText = 'JEFT'
+const texts = ['JEFT', 'BUVAK']
+let textIndex = 0
 let isDeleting = false
 let charIndex = 0
 let typeSpeed = 200
@@ -133,22 +134,24 @@ const resetTransform = () => {
 }
 
 const typeEffect = () => {
+  const currentText = texts[textIndex]
   const currentSpeed = isDeleting ? 100 : 200
   
-  if (!isDeleting && charIndex < fullText.length) {
-    displayText.value += fullText[charIndex]
+  if (!isDeleting && charIndex < currentText.length) {
+    displayText.value += currentText[charIndex]
     charIndex++
   } else if (isDeleting && charIndex > 0) {
     displayText.value = displayText.value.substring(0, charIndex - 1)
     charIndex--
   }
 
-  if (charIndex === fullText.length) {
+  if (charIndex === currentText.length) {
     isDeleting = true
     setTimeout(typeEffect, 2000) // Tam yazıldıktan sonra bekleme
     return
   } else if (isDeleting && charIndex === 0) {
     isDeleting = false
+    textIndex = (textIndex + 1) % texts.length // Switch to next text
     setTimeout(typeEffect, 500) // Tam silindikten sonra bekleme
     return
   }

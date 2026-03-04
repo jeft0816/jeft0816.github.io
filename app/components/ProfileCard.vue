@@ -197,6 +197,10 @@ function updateLastSeen() {
   }
 }
 
+const currentActivity = computed(() =>
+  (lanyardData.value?.activities || []).find(a => a.type !== 4 && a.name !== 'Spotify'),
+)
+
 onMounted(() => {
   fetchVisitorCount()
   typeEffect()
@@ -267,14 +271,14 @@ function getDiscordStatus(status) {
           <div v-if="lanyardData" class="single-activity-row">
             <div class="activity-chip game-chip">
               <div class="chip-icon">
-                <i :class="(lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify') || lastGameActivity) ? 'fas fa-gamepad' : 'fab fa-discord'" />
+                <i :class="(currentActivity || lastGameActivity) ? 'fas fa-gamepad' : 'fab fa-discord'" />
               </div>
               <div class="chip-info">
                 <span class="chip-name">
-                  {{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify')?.name || lastGameActivity?.name || 'Discord' }}
+                  {{ currentActivity?.name || lastGameActivity?.name || 'Discord' }}
                 </span>
                 <span class="chip-sub">
-                  {{ lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify') ? (lanyardData.activities.find(a => a.type !== 4 && a.name !== 'Spotify').details || 'Şu an oynuyor') : (lastGameActivity ? (lastSeenText ? `Son oynanan: ${lastSeenText}` : 'Çevrimdışı') : getDiscordStatus(lanyardData.discord_status)) }}
+                  {{ currentActivity ? (currentActivity.details || 'Şu an oynuyor') : (lastGameActivity ? (lastSeenText ? `Son oynanan: ${lastSeenText}` : 'Çevrimdışı') : getDiscordStatus(lanyardData.discord_status)) }}
                 </span>
               </div>
             </div>

@@ -1,5 +1,10 @@
 <script setup>
-const { data: userData } = await useFetch('/api/users', { query: { id: 'user2' } })
+const route = useRoute()
+const slug = computed(() => String(route.params.slug || ''))
+
+const { data: userData } = await useFetch('/api/users', {
+  query: { slug },
+})
 </script>
 
 <template>

@@ -9,8 +9,10 @@ useHead({
   ],
 })
 
+const { data: accounts } = await useFetch('/api/users')
+
 function enterSite() {
-  navigateTo('/user1')
+  navigateTo(accounts.value?.[0]?.path || '/')
 }
 </script>
 

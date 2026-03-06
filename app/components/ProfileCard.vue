@@ -1,201 +1,367 @@
-<script setup>
-import { onMounted, ref } from 'vue'
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { timeAgo } from '~/utils/timeAgo'
 
-const props = defineProps({
-  names: {
-    type: Array,
-    default: () => ['JEFT', 'BUVAK'],
-  },
-  discordId: {
-    type: String,
-    default: '828344938944921630',
-  },
-  location: {
-    type: String,
-    default: 'BURSA',
-  },
-  discordUsername: {
-    type: String,
-    default: '',
-  },
-  instagramUrl: {
-    type: String,
-    default: 'https://www.instagram.com/burak._.tmr8/',
-  },
-  spotifyUrl: {
-    type: String,
-    default: 'https://open.spotify.com/user/btsxr9443erco2g850ytb4jv4?si=ad579d1d308b4387',
-  },
-  avatarUrl: {
-    type: String,
-    default: '',
-  },
-  bgVideoUrl: {
-    type: String,
-    default: '',
-  },
-})
-
-// State
-const showTooltip = ref(false)
-const displayText = ref('')
-let textIndex = 0
-let isDeleting = false
-let charIndex = 0
-const lastGameActivity = ref(null)
-
-if (import.meta.client) {
-  lastGameActivity.value = JSON.parse(localStorage.getItem(`last_game_activity_${props.discordId}`)) || null
+interface LanyardActivity {
+  type: number
+  name: string
+  details?: string
 }
 
-// Refs
-const cardRef = ref(null)
+interface LanyardSpotify {
+  album_art_url: string
+  song: string
+  artist: string
+}
 
-// Discord copy function
+interface LanyardPresence {
+  discord_status?: string
+  activities?: LanyardActivity[]
+  listening_to_spotify?: boolean
+  spotify?: LanyardSpotify
+}
+
+interface LastGameActivity {
+  name: string
+  details: string
+  timestamp: number
+}
+
+interface GatewayEvent {
+  op?: number
+  t?: 'INIT_STATE' | 'PRESENCE_UPDATE'
+  d?: unknown
+}
+
+const props = withDefaults(defineProps<{
+  names?: string[]
+  discordId?: string
+  location?: string
+  discordUsername?: string
+  instagramUrl?: string
+  spotifyUrl?: string
+  avatarUrl?: string
+  bgVideoUrl?: string
+}>(), {
+  names: () => ['JEFT', 'BUVAK'],
+  discordId: '828344938944921630',
+  location: 'BURSA',
+  discordUsername: '',
+  instagramUrl: 'https://www.instagram.com/burak._.tmr8/',
+  spotifyUrl: 'https://open.spotify.com/user/btsxr9443erco2g850ytb4jv4?si=ad579d1d308b4387',
+  avatarUrl: '',
+  bgVideoUrl: '',
+})
+
+const showTooltip = ref(false)
+const displayText = ref('')
+const cardRef = ref<HTMLElement | null>(null)
+const lanyardData = ref<LanyardPresence | null>(null)
+const lastGameActivity = ref<LastGameActivity | null>(null)
+const lastSeenText = ref('')
+
+const storageKey = computed(() => `last_game_activity_${props.discordId}`)
+const profileNames = computed(() => {
+  const names = props.names.map(name => name.trim()).filter(Boolean)
+  return names.length ? names : ['JEFT']
+})
+
+const currentActivity = computed(() =>
+  (lanyardData.value?.activities || []).find(activity => activity.type !== 4 && activity.name !== 'Spotify'),
+)
+
+let textIndex = 0
+let charIndex = 0
+let isDeleting = false
+let socket: WebSocket | null = null
+let isUnmounted = false
+
+let typewriterTimeout: ReturnType<typeof setTimeout> | null = null
+let tooltipTimeout: ReturnType<typeof setTimeout> | null = null
+let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null
+let lastSeenInterval: ReturnType<typeof setInterval> | null = null
+
+function loadLastGameActivity() {
+  if (!import.meta.client)
+    return
+
+  try {
+    const raw = localStorage.getItem(storageKey.value)
+    if (!raw)
+      return
+
+    const parsed = JSON.parse(raw) as Partial<LastGameActivity>
+    if (typeof parsed?.name === 'string' && typeof parsed?.timestamp === 'number') {
+      lastGameActivity.value = {
+        name: parsed.name,
+        details: typeof parsed.details === 'string' ? parsed.details : 'Playing',
+        timestamp: parsed.timestamp,
+      }
+    }
+  }
+  catch {
+    lastGameActivity.value = null
+  }
+}
+
+function saveLastGameActivity(activity: LastGameActivity) {
+  if (!import.meta.client)
+    return
+
+  try {
+    localStorage.setItem(storageKey.value, JSON.stringify(activity))
+  }
+  catch {
+    // Storage failures should not block UI.
+  }
+}
+
 async function copyDiscord() {
+  if (!import.meta.client || !props.discordUsername)
+    return
+
   try {
     await navigator.clipboard.writeText(props.discordUsername)
     showTooltip.value = true
-    setTimeout(() => {
+
+    if (tooltipTimeout)
+      clearTimeout(tooltipTimeout)
+
+    tooltipTimeout = setTimeout(() => {
       showTooltip.value = false
+      tooltipTimeout = null
     }, 2000)
   }
-  catch (err) {
-    console.error('Kopyalama başarısız: ', err)
+  catch {
+    // Clipboard can fail when page is not focused or permissions are denied.
   }
 }
 
-
-
-function handleMouseMove(e) {
+function handleMouseMove(event: MouseEvent) {
   if (!cardRef.value)
     return
 
-  const card = cardRef.value
   const centerX = window.innerWidth / 2
   const centerY = window.innerHeight / 2
-  const mouseX = e.clientX
-  const mouseY = e.clientY
+  const deltaX = (event.clientX - centerX) / centerX
+  const deltaY = (event.clientY - centerY) / centerY
 
-  const deltaX = (mouseX - centerX) / centerX
-  const deltaY = (mouseY - centerY) / centerY
+  cardRef.value.style.setProperty('--rx', `${-deltaY * 10}deg`)
+  cardRef.value.style.setProperty('--ry', `${deltaX * 10}deg`)
+}
 
-  const rotateX = -deltaY * 10
-  const rotateY = deltaX * 10
+function scheduleTypeEffect(delay: number) {
+  if (typewriterTimeout)
+    clearTimeout(typewriterTimeout)
 
-  card.style.setProperty('--rx', `${rotateX}deg`)
-  card.style.setProperty('--ry', `${rotateY}deg`)
+  typewriterTimeout = setTimeout(() => {
+    typewriterTimeout = null
+    typeEffect()
+  }, delay)
 }
 
 function typeEffect() {
-  const currentText = props.names[textIndex]
-  const currentSpeed = isDeleting ? 100 : 200
+  const names = profileNames.value
+  const currentText = names[textIndex] || names[0]
+  if (!currentText)
+    return
+
+  const speed = isDeleting ? 80 : 140
 
   if (!isDeleting && charIndex < currentText.length) {
     displayText.value += currentText[charIndex]
     charIndex++
   }
   else if (isDeleting && charIndex > 0) {
-    displayText.value = displayText.value.substring(0, charIndex - 1)
+    displayText.value = displayText.value.slice(0, -1)
     charIndex--
   }
 
   if (charIndex === currentText.length) {
     isDeleting = true
-    setTimeout(typeEffect, 2000)
-    return
-  }
-  else if (isDeleting && charIndex === 0) {
-    isDeleting = false
-    textIndex = (textIndex + 1) % props.names.length
-    setTimeout(typeEffect, 500)
+    scheduleTypeEffect(1500)
     return
   }
 
-  setTimeout(typeEffect, currentSpeed)
+  if (isDeleting && charIndex === 0) {
+    isDeleting = false
+    textIndex = (textIndex + 1) % names.length
+    scheduleTypeEffect(400)
+    return
+  }
+
+  scheduleTypeEffect(speed)
 }
 
-const lanyardData = ref(null)
+function parseGatewayEvent(rawMessage: string): GatewayEvent | null {
+  try {
+    return JSON.parse(rawMessage) as GatewayEvent
+  }
+  catch {
+    return null
+  }
+}
+
+function startHeartbeat(interval: number) {
+  if (heartbeatInterval)
+    clearInterval(heartbeatInterval)
+
+  heartbeatInterval = setInterval(() => {
+    if (socket?.readyState === WebSocket.OPEN)
+      socket.send(JSON.stringify({ op: 3 }))
+  }, interval)
+}
+
+function updatePresence(presence: LanyardPresence) {
+  lanyardData.value = presence
+
+  const currentGame = (presence.activities || []).find(activity => activity.type !== 4 && activity.name !== 'Spotify')
+  if (!currentGame?.name)
+    return
+
+  const activityToStore: LastGameActivity = {
+    name: currentGame.name,
+    details: currentGame.details || 'Playing',
+    timestamp: Date.now(),
+  }
+
+  lastGameActivity.value = activityToStore
+  saveLastGameActivity(activityToStore)
+  updateLastSeen()
+}
+
+function handleGatewayMessage(event: MessageEvent<string>) {
+  const payload = parseGatewayEvent(event.data)
+  if (!payload)
+    return
+
+  if (payload.op === 1) {
+    const heartbeat = Number((payload.d as { heartbeat_interval?: number } | undefined)?.heartbeat_interval)
+    if (Number.isFinite(heartbeat) && heartbeat > 0) {
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          op: 2,
+          d: { subscribe_to_id: props.discordId },
+        }))
+      }
+      startHeartbeat(heartbeat)
+    }
+    return
+  }
+
+  if ((payload.t === 'INIT_STATE' || payload.t === 'PRESENCE_UPDATE') && payload.d)
+    updatePresence(payload.d as LanyardPresence)
+}
+
+function scheduleReconnect() {
+  if (isUnmounted)
+    return
+
+  if (reconnectTimeout)
+    clearTimeout(reconnectTimeout)
+
+  reconnectTimeout = setTimeout(() => {
+    reconnectTimeout = null
+    connectLanyard()
+  }, 5000)
+}
 
 function connectLanyard() {
-  const socket = new WebSocket('wss://api.lanyard.rest/socket')
+  if (!import.meta.client || isUnmounted)
+    return
 
-  socket.onmessage = (event) => {
-    const data = JSON.parse(event.data)
+  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING))
+    return
 
-    if (data.op === 1) {
-      socket.send(JSON.stringify({
-        op: 2,
-        d: { subscribe_to_id: props.discordId },
-      }))
+  socket = new WebSocket('wss://api.lanyard.rest/socket')
 
-      setInterval(() => {
-        socket.send(JSON.stringify({ op: 3 }))
-      }, data.d.heartbeat_interval)
-    }
+  socket.onmessage = event => handleGatewayMessage(event as MessageEvent<string>)
 
-    if (data.t === 'INIT_STATE' || data.t === 'PRESENCE_UPDATE') {
-      lanyardData.value = data.d
-      const currentGame = data.d?.activities?.find(a => a.type !== 4 && a.name !== 'Spotify')
-      if (currentGame) {
-        const activityToStore = {
-          name: currentGame.name,
-          details: currentGame.details || 'Playing',
-          timestamp: Date.now(),
-        }
-        lastGameActivity.value = activityToStore
-        localStorage.setItem(`last_game_activity_${props.discordId}`, JSON.stringify(activityToStore))
-      }
-    }
+  socket.onerror = () => {
+    socket?.close()
   }
 
   socket.onclose = () => {
-    setTimeout(connectLanyard, 5000)
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval)
+      heartbeatInterval = null
+    }
+
+    socket = null
+    scheduleReconnect()
   }
 }
 
-function timeAgo(timestamp) {
-  if (!timestamp)
-    return 'önce'
-  const seconds = Math.floor((Date.now() - timestamp) / 1000)
-  if (seconds < 60)
-    return 'saniyeler önce'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60)
-    return `${minutes}dk önce`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24)
-    return `${hours}sa önce`
-  return `${Math.floor(hours / 24)}g önce`
-}
-
-const lastSeenText = ref('')
 function updateLastSeen() {
-  if (lastGameActivity.value && lastGameActivity.value.timestamp) {
-    lastSeenText.value = timeAgo(lastGameActivity.value.timestamp)
+  if (!lastGameActivity.value?.timestamp) {
+    lastSeenText.value = ''
+    return
   }
+
+  lastSeenText.value = timeAgo(lastGameActivity.value.timestamp)
 }
 
-const currentActivity = computed(() =>
-  (lanyardData.value?.activities || []).find(a => a.type !== 4 && a.name !== 'Spotify'),
-)
+function getDiscordStatus(status?: string) {
+  switch (status) {
+    case 'dnd':
+      return 'Rahatsız Etmeyin'
+    case 'online':
+      return 'Çevrimiçi'
+    case 'idle':
+      return 'Boşta'
+    case 'offline':
+      return 'Çevrimdışı'
+    default:
+      return status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'Çevrimdışı'
+  }
+}
 
 onMounted(() => {
+  loadLastGameActivity()
+  updateLastSeen()
   typeEffect()
   connectLanyard()
-  updateLastSeen()
-  setInterval(updateLastSeen, 60000)
+
+  lastSeenInterval = setInterval(updateLastSeen, 60000)
 })
 
-function getDiscordStatus(status) {
-  switch (status) {
-    case 'dnd': return 'Rahatsız Etmeyin'
-    case 'online': return 'Çevrimiçi'
-    case 'idle': return 'Boşta'
-    case 'offline': return 'Çevrimdışı'
-    default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Çevrimdışı'
+onBeforeUnmount(() => {
+  isUnmounted = true
+
+  if (typewriterTimeout) {
+    clearTimeout(typewriterTimeout)
+    typewriterTimeout = null
   }
-}
+
+  if (tooltipTimeout) {
+    clearTimeout(tooltipTimeout)
+    tooltipTimeout = null
+  }
+
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout)
+    reconnectTimeout = null
+  }
+
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval)
+    heartbeatInterval = null
+  }
+
+  if (lastSeenInterval) {
+    clearInterval(lastSeenInterval)
+    lastSeenInterval = null
+  }
+
+  if (socket) {
+    socket.onclose = null
+    socket.onerror = null
+    socket.onmessage = null
+    socket.close()
+    socket = null
+  }
+})
 </script>
 
 <template>
@@ -222,7 +388,6 @@ function getDiscordStatus(status) {
         @click.stop
       >
         <div class="card-stack-layout">
-          <!-- TOP: Avatar + Nickname & Integrated Music -->
           <div class="identity-header">
             <div class="main-avatar-wrapper">
               <div class="main-avatar" :style="avatarUrl ? { background: `url(${avatarUrl}) center/cover no-repeat` } : { background: 'rgba(255,255,255,0.1)' }">
@@ -235,8 +400,7 @@ function getDiscordStatus(status) {
               <h1 class="username">
                 {{ displayText }}<span class="cursor">|</span>
               </h1>
-              <!-- Integrated Spotify Mini-Art -->
-              <div v-if="lanyardData && lanyardData.listening_to_spotify" class="mini-music-status">
+              <div v-if="lanyardData?.listening_to_spotify && lanyardData.spotify" class="mini-music-status">
                 <img :src="lanyardData.spotify.album_art_url" class="mini-album-art" alt="Spotify">
                 <div class="music-tooltip">
                   {{ lanyardData.spotify.song }} - {{ lanyardData.spotify.artist }}
@@ -245,7 +409,6 @@ function getDiscordStatus(status) {
             </div>
           </div>
 
-          <!-- MIDDLE: Live or Last Game Activity -->
           <div v-if="lanyardData" class="single-activity-row">
             <div class="activity-chip game-chip">
               <div class="chip-icon">
@@ -262,19 +425,18 @@ function getDiscordStatus(status) {
             </div>
           </div>
 
-          <!-- BOTTOM: Socials + Info -->
           <div class="card-footer-section">
             <div class="social-links-row">
-              <button class="social-button" @click="copyDiscord">
+              <button type="button" class="social-button" aria-label="Discord kullanici adini kopyala" @click="copyDiscord">
                 <i class="fab fa-discord" />
                 <div class="tooltip-box" :class="{ visible: showTooltip }">
                   Kopyalandı!
                 </div>
               </button>
-              <a :href="props.instagramUrl" target="_blank" class="social-button">
+              <a v-if="props.instagramUrl" :href="props.instagramUrl" target="_blank" rel="noopener noreferrer" class="social-button" aria-label="Instagram">
                 <i class="fab fa-instagram" />
               </a>
-              <a :href="props.spotifyUrl" target="_blank" class="social-button">
+              <a v-if="props.spotifyUrl" :href="props.spotifyUrl" target="_blank" rel="noopener noreferrer" class="social-button" aria-label="Spotify">
                 <i class="fab fa-spotify" />
               </a>
             </div>
@@ -300,4 +462,3 @@ function getDiscordStatus(status) {
   overflow: hidden;
 }
 </style>
-

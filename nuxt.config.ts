@@ -30,7 +30,6 @@ export default defineNuxtConfig({
     '@primevue/nuxt-module',
     '@vueuse/nuxt',
     '@nuxt/icon',
-    '@nuxt/test-utils/module',
     '@nuxt/fonts',
   ],
 

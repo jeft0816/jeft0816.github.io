@@ -38,7 +38,6 @@ const props = defineProps({
 
 // State
 const showTooltip = ref(false)
-const visitorCount = ref('...')
 const displayText = ref('')
 let textIndex = 0
 let isDeleting = false
@@ -66,27 +65,7 @@ async function copyDiscord() {
   }
 }
 
-// Visitor counter function
-async function fetchVisitorCount() {
-  const STORAGE_KEY = `visit_count_${props.discordId}`
-  const BASE_COUNT = props.initialVisitorCount
 
-  try {
-    const response = await fetch(`https://api.counterapi.dev/v1/webfriends-${props.discordId}/visits/up?t=${Date.now()}`)
-    if (!response.ok)
-      throw new Error('API blocked or down')
-
-    const data = await response.json()
-    visitorCount.value = data.count.toLocaleString('tr-TR')
-    localStorage.setItem(STORAGE_KEY, data.count)
-  }
-  catch {
-    let currentLocalCount = Number.parseInt(localStorage.getItem(STORAGE_KEY) || BASE_COUNT.toString())
-    currentLocalCount++
-    localStorage.setItem(STORAGE_KEY, currentLocalCount.toString())
-    visitorCount.value = currentLocalCount.toLocaleString('tr-TR')
-  }
-}
 
 function handleMouseMove(e) {
   if (!cardRef.value)
@@ -202,7 +181,6 @@ const currentActivity = computed(() =>
 )
 
 onMounted(() => {
-  fetchVisitorCount()
   typeEffect()
   connectLanyard()
   updateLastSeen()
@@ -303,11 +281,6 @@ function getDiscordStatus(status) {
 
             <div class="stats-badges">
               <div class="badge-item">
-                <i class="far fa-eye" />
-                <span>{{ visitorCount }}</span>
-              </div>
-              <div class="vertical-line" />
-              <div class="badge-item">
                 <i class="fas fa-map-marker-alt" />
                 <span>{{ props.location }}</span>
               </div>
@@ -327,3 +300,4 @@ function getDiscordStatus(status) {
   overflow: hidden;
 }
 </style>
+

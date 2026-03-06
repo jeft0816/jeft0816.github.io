@@ -1,23 +1,15 @@
 <template>
-  <div class="layout-wrapper">
-    <main class="main-content">
-      <slot />
-    </main>
-    <AccountHeader />
-  </div>
+  <main class="main-content">
+    <slot />
+  </main>
 </template>
 
 <style scoped>
-.layout-wrapper {
+.main-content {
   width: 100vw;
   height: 100vh;
   position: relative;
   background: #000;
   overflow: hidden;
-}
-
-.main-content {
-  width: 100%;
-  height: 100%;
 }
 </style>

@@ -376,7 +376,6 @@ onBeforeUnmount(() => {
       :src="bgVideoUrl"
       autoplay
       loop
-      muted
       playsinline
     />
     <div class="overlay" />
@@ -462,3 +461,4 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 </style>
+

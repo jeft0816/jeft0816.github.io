@@ -16,6 +16,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
+          version: 10.30.3
           run_install: false
 
       - name: Node.js kur
@@ -42,3 +43,4 @@ jobs:
           server-dir: ${{ secrets.FTP_PATH }}
           log-level: minimal
           dangerous-clean-slate: true
+

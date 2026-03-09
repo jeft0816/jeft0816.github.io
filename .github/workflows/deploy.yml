@@ -17,21 +17,28 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 10.30.3
-          run_install: false
 
-      - name: Node.js kur
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          cache: pnpm
 
-      - name: Bağımlılıkları kur
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Nuxt static generate
+      - name: Cache Nuxt build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .nuxt
+            node_modules/.cache
+          key: nuxt-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Generate static site
         run: pnpm generate
 
-      - name: FTP Deploy
+      - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -41,6 +48,8 @@ jobs:
           port: 21
           local-dir: .output/public/
           server-dir: ${{ secrets.FTP_PATH }}
-          log-level: minimal
-          dangerous-clean-slate: true
-
+          log-level: standard
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**

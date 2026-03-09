@@ -27,6 +27,10 @@ interface LastGameActivity {
   timestamp: number
 }
 
+interface LastSpotifyTrack extends LanyardSpotify {
+  timestamp: number
+}
+
 interface GatewayEvent {
   op?: number
   t?: 'INIT_STATE' | 'PRESENCE_UPDATE'
@@ -59,8 +63,11 @@ const cardRef = ref<HTMLElement | null>(null)
 const lanyardData = ref<LanyardPresence | null>(null)
 const lastGameActivity = ref<LastGameActivity | null>(null)
 const lastSeenText = ref('')
+const lastSpotifyTrack = ref<LastSpotifyTrack | null>(null)
+const lastSpotifySeenText = ref('')
 
-const storageKey = computed(() => `last_game_activity_${props.discordId}`)
+const gameStorageKey = computed(() => `last_game_activity_${props.discordId}`)
+const spotifyStorageKey = computed(() => `last_spotify_track_${props.discordId}`)
 const profileNames = computed(() => {
   const names = props.names.map(name => name.trim()).filter(Boolean)
   return names.length ? names : ['JEFT']
@@ -68,6 +75,12 @@ const profileNames = computed(() => {
 
 const currentActivity = computed(() =>
   (lanyardData.value?.activities || []).find(activity => activity.type !== 4 && activity.name !== 'Spotify'),
+)
+const isListeningToSpotify = computed(() =>
+  Boolean(lanyardData.value?.listening_to_spotify && lanyardData.value.spotify),
+)
+const displayedSpotifyTrack = computed(() =>
+  isListeningToSpotify.value ? (lanyardData.value?.spotify ?? null) : lastSpotifyTrack.value,
 )
 
 let textIndex = 0
@@ -87,7 +100,7 @@ function loadLastGameActivity() {
     return
 
   try {
-    const raw = localStorage.getItem(storageKey.value)
+    const raw = localStorage.getItem(gameStorageKey.value)
     if (!raw)
       return
 
@@ -110,7 +123,43 @@ function saveLastGameActivity(activity: LastGameActivity) {
     return
 
   try {
-    localStorage.setItem(storageKey.value, JSON.stringify(activity))
+    localStorage.setItem(gameStorageKey.value, JSON.stringify(activity))
+  }
+  catch {
+    // Storage failures should not block UI.
+  }
+}
+
+function loadLastSpotifyTrack() {
+  if (!import.meta.client)
+    return
+
+  try {
+    const raw = localStorage.getItem(spotifyStorageKey.value)
+    if (!raw)
+      return
+
+    const parsed = JSON.parse(raw) as Partial<LastSpotifyTrack>
+    if (typeof parsed?.song === 'string' && typeof parsed?.artist === 'string' && typeof parsed?.timestamp === 'number') {
+      lastSpotifyTrack.value = {
+        song: parsed.song,
+        artist: parsed.artist,
+        album_art_url: typeof parsed.album_art_url === 'string' ? parsed.album_art_url : '',
+        timestamp: parsed.timestamp,
+      }
+    }
+  }
+  catch {
+    lastSpotifyTrack.value = null
+  }
+}
+
+function saveLastSpotifyTrack(track: LastSpotifyTrack) {
+  if (!import.meta.client)
+    return
+
+  try {
+    localStorage.setItem(spotifyStorageKey.value, JSON.stringify(track))
   }
   catch {
     // Storage failures should not block UI.
@@ -216,18 +265,31 @@ function startHeartbeat(interval: number) {
 function updatePresence(presence: LanyardPresence) {
   lanyardData.value = presence
 
-  const currentGame = (presence.activities || []).find(activity => activity.type !== 4 && activity.name !== 'Spotify')
-  if (!currentGame?.name)
-    return
+  if (presence.listening_to_spotify && presence.spotify?.song && presence.spotify.artist) {
+    const trackToStore: LastSpotifyTrack = {
+      song: presence.spotify.song,
+      artist: presence.spotify.artist,
+      album_art_url: presence.spotify.album_art_url || '',
+      timestamp: Date.now(),
+    }
 
-  const activityToStore: LastGameActivity = {
-    name: currentGame.name,
-    details: currentGame.details || 'Playing',
-    timestamp: Date.now(),
+    lastSpotifyTrack.value = trackToStore
+    saveLastSpotifyTrack(trackToStore)
+    updateLastSpotifySeen()
   }
 
-  lastGameActivity.value = activityToStore
-  saveLastGameActivity(activityToStore)
+  const currentGame = (presence.activities || []).find(activity => activity.type !== 4 && activity.name !== 'Spotify')
+  if (currentGame?.name) {
+    const activityToStore: LastGameActivity = {
+      name: currentGame.name,
+      details: currentGame.details || 'Playing',
+      timestamp: Date.now(),
+    }
+
+    lastGameActivity.value = activityToStore
+    saveLastGameActivity(activityToStore)
+  }
+
   updateLastSeen()
 }
 
@@ -302,6 +364,15 @@ function updateLastSeen() {
   lastSeenText.value = timeAgo(lastGameActivity.value.timestamp)
 }
 
+function updateLastSpotifySeen() {
+  if (!lastSpotifyTrack.value?.timestamp) {
+    lastSpotifySeenText.value = ''
+    return
+  }
+
+  lastSpotifySeenText.value = timeAgo(lastSpotifyTrack.value.timestamp)
+}
+
 function getDiscordStatus(status?: string) {
   switch (status) {
     case 'dnd':
@@ -319,11 +390,16 @@ function getDiscordStatus(status?: string) {
 
 onMounted(() => {
   loadLastGameActivity()
+  loadLastSpotifyTrack()
   updateLastSeen()
+  updateLastSpotifySeen()
   typeEffect()
   connectLanyard()
 
-  lastSeenInterval = setInterval(updateLastSeen, 60000)
+  lastSeenInterval = setInterval(() => {
+    updateLastSeen()
+    updateLastSpotifySeen()
+  }, 60000)
 })
 
 onBeforeUnmount(() => {
@@ -399,10 +475,10 @@ onBeforeUnmount(() => {
               <h1 class="username">
                 {{ displayText }}<span class="cursor">|</span>
               </h1>
-              <div v-if="lanyardData?.listening_to_spotify && lanyardData.spotify" class="mini-music-status">
-                <img :src="lanyardData.spotify.album_art_url" class="mini-album-art" alt="Spotify">
+              <div v-if="displayedSpotifyTrack" class="mini-music-status">
+                <img :src="displayedSpotifyTrack.album_art_url" class="mini-album-art" alt="Spotify">
                 <div class="music-tooltip">
-                  {{ lanyardData.spotify.song }} - {{ lanyardData.spotify.artist }}
+                  {{ displayedSpotifyTrack.song }} - {{ displayedSpotifyTrack.artist }}{{ !isListeningToSpotify && lastSpotifySeenText ? ` • Son: ${lastSpotifySeenText}` : '' }}
                 </div>
               </div>
             </div>
@@ -461,4 +537,3 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 </style>
-

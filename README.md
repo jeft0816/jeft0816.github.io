@@ -56,16 +56,6 @@ Required repository secrets:
 - `FTP_PASSWORD`
 - `FTP_PATH`
 
-## Environment Variables
-
-Create `.env` from `.env.example` when needed:
-
-- `NUXT_PUBLIC_SITE_URL`
-- `NUXT_PUBLIC_APP_ENV`
-- `NUXT_API_SECRET`
-
-Public variables (`NUXT_PUBLIC_*`) are exposed to the client bundle.
-
 ## Hosting Notes
 
 - `public/.htaccess` is deployed with static files and contains Apache security headers + cache rules.

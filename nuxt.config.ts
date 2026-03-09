@@ -13,11 +13,21 @@
 // text-muted-color => Secondary text color.
 // text-muted-color-emphasis => Secondary text color with emphasis.
 
+import process from 'node:process'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
 
   devtools: { enabled: false },
+
+  runtimeConfig: {
+    apiSecret: process.env.NUXT_API_SECRET || '',
+    public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://example.com',
+      appEnv: process.env.NUXT_PUBLIC_APP_ENV || 'production',
+    },
+  },
 
   css: [
     '~/assets/css/main.css',

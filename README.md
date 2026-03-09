@@ -41,6 +41,36 @@ public/                  Static assets
 test/unit/               Unit tests
 ```
 
+## Production Deployment (FTP)
+
+The project uses GitHub Actions workflow at `.github/workflows/deploy.yml`.
+
+- On `pull_request` to `main`: `lint -> test -> generate` runs as a quality gate.
+- On `push` to `main`: the same quality gate runs, then the generated static artifact is deployed via FTPS.
+- Deployment source is `.output/public` artifact, not a fresh second build.
+
+Required repository secrets:
+
+- `FTP_SERVER`
+- `FTP_USERNAME`
+- `FTP_PASSWORD`
+- `FTP_PATH`
+
+## Environment Variables
+
+Create `.env` from `.env.example` when needed:
+
+- `NUXT_PUBLIC_SITE_URL`
+- `NUXT_PUBLIC_APP_ENV`
+- `NUXT_API_SECRET`
+
+Public variables (`NUXT_PUBLIC_*`) are exposed to the client bundle.
+
+## Hosting Notes
+
+- `public/.htaccess` is deployed with static files and contains Apache security headers + cache rules.
+- Ensure Apache modules are enabled if available: `mod_headers`, `mod_expires`, `mod_deflate`.
+
 ## Notes
 
 - Profile data is centralized in `app/constants/profile.ts`.

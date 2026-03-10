@@ -8,17 +8,17 @@ interface LanyardActivity {
   details?: string
 }
 
-interface LanyardSpotify {
-  album_art_url: string
-  song: string
-  artist: string
-}
-
 interface LanyardPresence {
   discord_status?: string
   activities?: LanyardActivity[]
-  listening_to_spotify?: boolean
-  spotify?: LanyardSpotify
+}
+
+interface SpotifyTrack {
+  album_art_url: string
+  song: string
+  artist: string
+  timestamp: number
+  external_url?: string
 }
 
 interface LastGameActivity {
@@ -27,7 +27,7 @@ interface LastGameActivity {
   timestamp: number
 }
 
-interface LastSpotifyTrack extends LanyardSpotify {
+interface LastSpotifyTrack extends SpotifyTrack {
   timestamp: number
 }
 
@@ -65,6 +65,7 @@ const lastGameActivity = ref<LastGameActivity | null>(null)
 const lastSeenText = ref('')
 const lastSpotifyTrack = ref<LastSpotifyTrack | null>(null)
 const lastSpotifySeenText = ref('')
+const spotifyNowPlaying = ref<{ isPlaying: boolean, track: SpotifyTrack | null } | null>(null)
 
 const gameStorageKey = computed(() => `last_game_activity_${props.discordId}`)
 const spotifyStorageKey = computed(() => `last_spotify_track_${props.discordId}`)
@@ -77,10 +78,10 @@ const currentActivity = computed(() =>
   (lanyardData.value?.activities || []).find(activity => activity.type !== 4 && activity.name !== 'Spotify'),
 )
 const isListeningToSpotify = computed(() =>
-  Boolean(lanyardData.value?.listening_to_spotify && lanyardData.value.spotify),
+  Boolean(spotifyNowPlaying.value?.isPlaying && spotifyNowPlaying.value.track),
 )
 const displayedSpotifyTrack = computed(() =>
-  isListeningToSpotify.value ? (lanyardData.value?.spotify ?? null) : lastSpotifyTrack.value,
+  isListeningToSpotify.value ? (spotifyNowPlaying.value?.track ?? null) : lastSpotifyTrack.value,
 )
 
 let textIndex = 0
@@ -94,6 +95,7 @@ let tooltipTimeout: ReturnType<typeof setTimeout> | null = null
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null
 let lastSeenInterval: ReturnType<typeof setInterval> | null = null
+let spotifyInterval: ReturnType<typeof setInterval> | null = null
 
 function loadLastGameActivity() {
   if (!import.meta.client)
@@ -163,6 +165,33 @@ function saveLastSpotifyTrack(track: LastSpotifyTrack) {
   }
   catch {
     // Storage failures should not block UI.
+  }
+}
+
+async function fetchSpotifyNowPlaying() {
+  if (!import.meta.client)
+    return
+
+  try {
+    const data = await $fetch<{ isPlaying: boolean, track: SpotifyTrack | null }>('/api/spotify/current')
+    spotifyNowPlaying.value = data
+
+    if (data?.isPlaying && data.track?.song && data.track.artist) {
+      const trackToStore: LastSpotifyTrack = {
+        song: data.track.song,
+        artist: data.track.artist,
+        album_art_url: data.track.album_art_url || '',
+        timestamp: data.track.timestamp || Date.now(),
+        external_url: data.track.external_url,
+      }
+
+      lastSpotifyTrack.value = trackToStore
+      saveLastSpotifyTrack(trackToStore)
+      updateLastSpotifySeen()
+    }
+  }
+  catch {
+    // Network or auth errors should not block UI.
   }
 }
 
@@ -264,19 +293,6 @@ function startHeartbeat(interval: number) {
 
 function updatePresence(presence: LanyardPresence) {
   lanyardData.value = presence
-
-  if (presence.listening_to_spotify && presence.spotify?.song && presence.spotify.artist) {
-    const trackToStore: LastSpotifyTrack = {
-      song: presence.spotify.song,
-      artist: presence.spotify.artist,
-      album_art_url: presence.spotify.album_art_url || '',
-      timestamp: Date.now(),
-    }
-
-    lastSpotifyTrack.value = trackToStore
-    saveLastSpotifyTrack(trackToStore)
-    updateLastSpotifySeen()
-  }
 
   const currentGame = (presence.activities || []).find(activity => activity.type !== 4 && activity.name !== 'Spotify')
   if (currentGame?.name) {
@@ -395,11 +411,16 @@ onMounted(() => {
   updateLastSpotifySeen()
   typeEffect()
   connectLanyard()
+  fetchSpotifyNowPlaying()
 
   lastSeenInterval = setInterval(() => {
     updateLastSeen()
     updateLastSpotifySeen()
   }, 60000)
+
+  spotifyInterval = setInterval(() => {
+    fetchSpotifyNowPlaying()
+  }, 30000)
 })
 
 onBeforeUnmount(() => {
@@ -428,6 +449,11 @@ onBeforeUnmount(() => {
   if (lastSeenInterval) {
     clearInterval(lastSeenInterval)
     lastSeenInterval = null
+  }
+
+  if (spotifyInterval) {
+    clearInterval(spotifyInterval)
+    spotifyInterval = null
   }
 
   if (socket) {
@@ -537,3 +563,5 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 </style>
+
+

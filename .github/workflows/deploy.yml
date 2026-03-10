@@ -48,6 +48,10 @@ jobs:
 
       - name: Generate static site
         run: pnpm generate
+        env:
+          NUXT_SPOTIFY_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          NUXT_SPOTIFY_CLIENT_SECRET: ${{ secrets.CLIENT_SECRETS }}
+          NUXT_SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
 
       - name: Upload static artifact
         uses: actions/upload-artifact@v4
@@ -92,3 +96,5 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
+
+

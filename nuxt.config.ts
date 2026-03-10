@@ -22,6 +22,9 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
 
   runtimeConfig: {
+    spotifyClientId: process.env.NUXT_SPOTIFY_CLIENT_ID || process.env.SPOTIFY_CLIENT_ID || process.env.CLIENT_ID || '',
+    spotifyClientSecret: process.env.NUXT_SPOTIFY_CLIENT_SECRET || process.env.SPOTIFY_CLIENT_SECRET || process.env.CLIENT_SECRET || process.env.CLIENT_SECRETS || '',
+    spotifyRefreshToken: process.env.NUXT_SPOTIFY_REFRESH_TOKEN || process.env.SPOTIFY_REFRESH_TOKEN || process.env.SPOTIFY_REFRESH || '',
     apiSecret: process.env.NUXT_API_SECRET || '',
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://example.com',
@@ -49,3 +52,4 @@ export default defineNuxtConfig({
     },
   },
 })
+

@@ -74,7 +74,7 @@ jobs:
 
     steps:
       - name: Download static artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: nuxt-static-site
           path: ./public

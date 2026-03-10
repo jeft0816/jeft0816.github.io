@@ -1,4 +1,6 @@
-export default defineEventHandler(async (event) => {
+import { Buffer } from 'node:buffer'
+
+export default defineEventHandler(async (_event) => {
   const config = useRuntimeConfig()
   const clientId = config.spotifyClientId as string
   const clientSecret = config.spotifyClientSecret as string
@@ -12,7 +14,7 @@ export default defineEventHandler(async (event) => {
     const token = await $fetch<{ access_token: string }>('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: {
-        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+        'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({

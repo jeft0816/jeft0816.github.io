@@ -24,7 +24,7 @@
     "@primeuix/themes": "2.0.3",
     "@primevue/forms": "4.5.4",
     "@vueuse/nuxt": "14.2.1",
-    "nuxt": "4.3.1",
+    "nuxt": "4.4.2",
     "primeicons": "7.0.0",
     "primevue": "4.5.4"
   },
